@@ -1,7 +1,7 @@
 {
   "name": "instagrambackend",
   "version": "1.0.0",
-  "description": "backend instagram clone",
+  "description": "instagram clone",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
   "keywords": [
     "javascript"
   ],
-  "author": "Abdurazaq",
+  "author": "abdurazaq",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
