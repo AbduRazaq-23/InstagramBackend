@@ -11,7 +11,7 @@ const postSchema = new Schema(
       type: String,
       required: true,
     },
-    caption: {
+    description: {
       type: String,
     },
 

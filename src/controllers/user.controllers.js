@@ -163,7 +163,7 @@ const getLogInUser = asyncHandler(async (req, res) => {
 
 //@dec --- userToggleFollowing controller ---
 const userToggleFollowing = asyncHandler(async (req, res) => {
-  const userId = new mongoose.Types.ObjectId(req.params.userId);
+  const userId = new mongoose.Types.ObjectId(req.params);
   const followersId = new mongoose.Types.ObjectId(req.user._id);
 
   const follower = await User.findById(followersId);
