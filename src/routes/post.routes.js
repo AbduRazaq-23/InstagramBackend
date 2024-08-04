@@ -12,7 +12,7 @@ import {
 } from "../controllers/post.controllers.js";
 
 router.route("/").post(upload.single("imageUrl"), PostTheFiles);
-router.route("/").delete(verifyJWT, deletePost);
-router.route("/").patch(verifyJWT, likePost);
+router.route("/:postId").delete(verifyJWT, deletePost);
+router.route("/:postId").patch(verifyJWT, likePost);
 
 export default router;
