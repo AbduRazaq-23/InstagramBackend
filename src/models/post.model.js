@@ -9,7 +9,7 @@ const postSchema = new Schema(
     },
     imageUrl: {
       type: String,
-      required: true,
+      // required: true,
     },
     description: {
       type: String,

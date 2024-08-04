@@ -11,7 +11,7 @@ import {
   likePost,
 } from "../controllers/post.controllers.js";
 
-router.route("/").post(upload.single("imageUrl"), PostTheFiles);
+router.route("/").post(verifyJWT, upload.single("imageUrl"), PostTheFiles);
 router.route("/:postId").delete(verifyJWT, deletePost);
 router.route("/:postId").patch(verifyJWT, likePost);
 

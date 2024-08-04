@@ -9,12 +9,13 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 //@dec --- Posting The image or video controller ---
 const PostTheFiles = asyncHandler(async (req, res) => {
   const { description } = req.body;
-  const userId = req.user?._id;
+  const userId = new mongoose.Types.ObjectId(req.user?._id);
 
   const user = await User.findById(userId);
-  if (user) {
-    throw new ApiError(400, "u can't post");
+  if (!user) {
+    throw new ApiError(500, "u can not post");
   }
+
   const imageUrl = req.file?.path;
 
   if (!imageUrl) {
@@ -22,9 +23,9 @@ const PostTheFiles = asyncHandler(async (req, res) => {
   }
 
   const post = await uploadOnCloudinary(imageUrl);
-  if (!post) {
-    throw new ApiError(400, "problem while uploading to cloudinary");
-  }
+  // if (!post) {
+  //   throw new ApiError(400, "problem while uploading to cloudinary");
+  // }
 
   const postData = await Post.create({
     user: new mongoose.Types.ObjectId(user._id),
@@ -36,19 +37,20 @@ const PostTheFiles = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, postData, "post successfully posted"));
 });
+
 //@dec --- deletePost controller ---
 const deletePost = asyncHandler(async (req, res) => {
-  const postId = req.params;
   const userId = req.user?._id;
-
-  const user = await Post.findByIdAndDelete({ user: userId, postId });
-  if (!user) {
-    throw new ApiError(400, "u can't delete");
+  const { postId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(postId)) {
+    console.error("Invalid post ID:", postId);
+    throw new ApiError(400, "Invalid post ID");
   }
+  const deletePost = await Post.findByIdAndDelete(postId);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, user, "post deleted successfully"));
+    .json(new ApiResponse(200, "post deleted successfully"));
 });
 //@dec --- likePost controller ---
 const likePost = asyncHandler(async (req, res) => {
@@ -58,14 +60,14 @@ const likePost = asyncHandler(async (req, res) => {
   const user = await Post.findByIdAndUpdate(postId, [
     {
       $set: {
-        followers: {
+        likes: {
           $cond: {
             if: { $in: [likedById, "$likes"] },
             then: {
               $filter: {
                 input: "$likes",
-                as: "f",
-                cond: { $ne: ["$$f", likedById] },
+                as: "like",
+                cond: { $ne: ["$$like", likedById] },
               },
             },
             else: { $concatArrays: ["$likes", [likedById]] },
