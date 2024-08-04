@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { User } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -37,6 +38,7 @@ const registerUser = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, regUser, "user registered successfully"));
 });
+
 //@dec --- logInUser controller ---
 const logInUser = asyncHandler(async (req, res) => {
   const { username, password } = req.body;
@@ -70,6 +72,7 @@ const logInUser = asyncHandler(async (req, res) => {
       new ApiResponse(200, { user, token }, "user registered successfully")
     );
 });
+
 //@dec --- logOutUser controller ---
 const logOutUser = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
@@ -87,6 +90,7 @@ const logOutUser = asyncHandler(async (req, res) => {
     .clearCookie("token", options)
     .json(new ApiResponse(200, "user logOut successfully"));
 });
+
 //@dec --- updateUser details controller ---
 const updateUser = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -101,6 +105,7 @@ const updateUser = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user, "user details updated successfully"));
 });
+
 //@dec --- updateUserAvatar controller ---
 const updateUserAvatar = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
@@ -122,6 +127,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user, "user details updated successfully"));
 });
+
 //@dec --- changeCurrentPassword controller ---
 const changeCurrentPassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
@@ -145,6 +151,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, "Password changed successfully"));
 });
+
 //@dec --- getLogInUser controller ---
 const getLogInUser = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
@@ -152,6 +159,125 @@ const getLogInUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, user, "fetched login user successfully"));
+});
+
+//@dec --- userToggleFollowing controller ---
+const userToggleFollowing = asyncHandler(async (req, res) => {
+  const userId = new mongoose.Types.ObjectId(req.params.userId);
+  const followersId = new mongoose.Types.ObjectId(req.user._id);
+
+  const follower = await User.findById(followersId);
+  if (!follower) {
+    throw new ApiError(401, "You can't follow");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    [
+      {
+        $set: {
+          followers: {
+            $cond: {
+              if: { $in: [followersId, "$followers"] },
+              then: {
+                $filter: {
+                  input: "$followers",
+                  as: "f",
+                  cond: { $ne: ["$$f", followersId] },
+                },
+              },
+              else: { $concatArrays: ["$followers", [followersId]] },
+            },
+          },
+        },
+      },
+    ],
+    { new: true, useFindAndModify: false }
+  );
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Fetched user followers successfully", user));
+});
+
+//@dec --- userFollowing controller ---
+const getUserFollowingAndCount = asyncHandler(async (req, res) => {
+  const userId = new mongoose.Types.ObjectId(req.user._id);
+
+  //@dec find that following which i follow
+  const followingUser = await User.find({ followers: userId });
+
+  //@dec then count that all
+  const countUser = await User.aggregate([
+    {
+      $match: {
+        followers: userId,
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        TotalFollowing: {
+          $sum: 1,
+        },
+      },
+    },
+  ]);
+  if (!countUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { countUser, followingUser },
+        "Fetched user following list successfully"
+      )
+    );
+});
+
+//@dec --- userFollowing controller ---
+const getUserFollowerAndCount = asyncHandler(async (req, res) => {
+  const userId = new mongoose.Types.ObjectId(req.user._id);
+
+  //@dec first find the user which have follower
+  const findFollower = await User.findById(userId);
+  //@dec then that all id store on one variable
+  const followersAccount = findFollower.followers;
+  //@dec then find that all user on that id which are in following array
+  const followerAcc = await User.findById(followersAccount).select(
+    "-token -password -email"
+  );
+
+  //@dec then count that all
+  const followersCount = await User.aggregate([
+    {
+      $match: {
+        _id: findFollower._id,
+      },
+    },
+    {
+      $project: {
+        followers: { $size: "$followers" },
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { followersCount, followerAcc },
+        "Fetched user followers successfully"
+      )
+    );
 });
 
 export {
@@ -162,4 +288,7 @@ export {
   updateUserAvatar,
   changeCurrentPassword,
   getLogInUser,
+  userToggleFollowing,
+  getUserFollowingAndCount,
+  getUserFollowerAndCount,
 };

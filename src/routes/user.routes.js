@@ -9,6 +9,9 @@ import {
   updateUserAvatar,
   changeCurrentPassword,
   getLogInUser,
+  userToggleFollowing,
+  getUserFollowingAndCount,
+  getUserFollowerAndCount,
 } from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -23,5 +26,9 @@ router
   .patch(verifyJWT, upload.single("imageUrl"), updateUserAvatar);
 router.route("/changpassword").patch(verifyJWT, changeCurrentPassword);
 router.route("/getuser").get(verifyJWT, getLogInUser);
+router.route("/:userId").patch(verifyJWT, userToggleFollowing);
+
+router.route("/following").get(verifyJWT, getUserFollowingAndCount);
+router.route("/follower").get(verifyJWT, getUserFollowerAndCount);
 
 export default router;
