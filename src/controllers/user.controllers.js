@@ -151,7 +151,7 @@ const getLogInUser = asyncHandler(async (req, res) => {
   const user = await User.findById(userId);
   return res
     .status(200)
-    .json(new ApiResponse(200, "fetched login user successfully"));
+    .json(new ApiResponse(200, user, "fetched login user successfully"));
 });
 
 export {
