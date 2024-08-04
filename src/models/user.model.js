@@ -33,6 +33,9 @@ const userSchema = new Schema(
         ref: "User",
       },
     ],
+    token: {
+      type: String,
+    },
   },
   {
     timestamps: true,
