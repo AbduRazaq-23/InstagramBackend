@@ -1,10 +1,7 @@
 import mongoose from "mongoose";
-import { User } from "../models/user.model.js";
 import { Comment } from "../models/comment.model.js";
-import { Post } from "../models/post.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { ApiError } from "../utils/ApiError.js";
 
 //@dec --- commentOnPost The image or video controller ---
 const commentOnPost = asyncHandler(async (req, res) => {
@@ -12,25 +9,33 @@ const commentOnPost = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   const { postId } = req.params;
 
-  const user = await User.findById(userId);
-  if (!user) {
-    throw new ApiError(500, "u can not comment");
-  }
+  // you can put if condition if not available
 
-  const post = await Post.findById(userId);
-  if (!post) {
-    throw new ApiError(500, "u can not comment");
-  }
-
-  const postData = await Comment.create({
-    user: new mongoose.Types.ObjectId(user._id),
+  const postComment = await Comment.create({
+    user: new mongoose.Types.ObjectId(userId),
     post: new mongoose.Types.ObjectId(postId),
     text,
   });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, postData, "post successfully posted"));
+    .json(new ApiResponse(200, postComment, "comment successfully posted"));
+});
+//@dec --- deleteComment controller ---
+const deleteComment = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  const { commentId } = req.params;
+
+  // you can put if condition if not available
+
+  await Comment.findByIdAndDelete({
+    _id: commentId,
+    user: userId,
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "comment deleted successfully"));
 });
 
-export { commentOnPost };
+export { commentOnPost, deleteComment };
