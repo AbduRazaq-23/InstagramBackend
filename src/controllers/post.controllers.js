@@ -46,15 +46,19 @@ const deletePost = asyncHandler(async (req, res) => {
     console.error("Invalid post ID:", postId);
     throw new ApiError(400, "Invalid post ID");
   }
-  const deletePost = await Post.findByIdAndDelete(postId);
+  const post = await Post.findOneAndDelete({ _id: postId, user: userId });
+  if (!post) {
+    throw new ApiError(401, "u can't delete");
+  }
 
   return res
     .status(200)
     .json(new ApiResponse(200, "post deleted successfully"));
 });
+
 //@dec --- likePost controller ---
 const likePost = asyncHandler(async (req, res) => {
-  const postId = new mongoose.Types.ObjectId(req.params);
+  const { postId } = req.params;
   const likedById = new mongoose.Types.ObjectId(req.user?._id);
 
   const user = await Post.findByIdAndUpdate(postId, [
@@ -82,4 +86,26 @@ const likePost = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "post liked or not like"));
 });
 
-export { PostTheFiles, deletePost, likePost };
+//@dec --- countPostLikes controller ---
+const countPostLikes = asyncHandler(async (req, res) => {
+  const { postId } = req.params;
+
+  const post = await Post.findById(postId);
+  const totalLikes = await Post.aggregate([
+    {
+      $match: {
+        _id: post._id,
+      },
+    },
+    {
+      $project: {
+        likes: { $size: "$likes" },
+      },
+    },
+  ]);
+
+  return res.status(200).json(new ApiResponse(200, totalLikes, "total likes"));
+});
+
+//@dec export all the function
+export { PostTheFiles, deletePost, likePost, countPostLikes };
